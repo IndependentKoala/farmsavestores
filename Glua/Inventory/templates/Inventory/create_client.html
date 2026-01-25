@@ -51,6 +51,20 @@
         box-shadow: 0 0 0 3px rgba(2, 117, 216, 0.1);
     }
 
+    .form-group select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 10px 12px;
+        transition: all 0.3s ease;
+        background-color: #fff;
+        cursor: pointer;
+    }
+
+    .form-group select:focus {
+        border-color: #0275d8;
+        box-shadow: 0 0 0 3px rgba(2, 117, 216, 0.1);
+    }
+
     .form-actions {
         display: flex;
         gap: 12px;
@@ -96,6 +110,34 @@
         font-size: 12px;
         color: #999;
         margin-top: 5px;
+    }
+
+    .phone-group {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .phone-group .form-group {
+        flex: 0 0 auto;
+        margin-bottom: 0;
+    }
+
+    .phone-group .form-group:first-child {
+        flex: 0 0 200px;
+    }
+
+    .phone-group .form-group:last-child {
+        flex: 1;
+    }
+
+    .phone-group .form-group label {
+        margin-bottom: 10px;
+    }
+
+    .phone-group .form-group:first-child select {
+        height: 45px;
+        padding: 8px 12px;
     }
 
     @media (max-width: 768px) {
@@ -162,13 +204,26 @@
                         <div class="helper-text">Optional - enter client email address</div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="phone">
-                            <i class="fas fa-phone"></i> Phone Number
-                        </label>
-                        <input type="tel" class="form-control" id="phone" name="phone" 
-                               placeholder="e.g. +1 (555) 123-4567">
-                        <div class="helper-text">Optional - enter client phone number</div>
+                    <div class="phone-group">
+                        <div class="form-group">
+                            <label for="country_code">
+                                <i class="fas fa-globe"></i> Country Code
+                            </label>
+                            <select class="form-control" id="country_code" name="country_code">
+                                {% for code, country in country_choices %}
+                                    <option value="{{ code }}">{{ country }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   placeholder="e.g. 555 123-4567">
+                            <div class="helper-text">Optional - enter phone number</div>
+                        </div>
                     </div>
 
                     <div class="form-actions">

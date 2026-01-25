@@ -264,6 +264,11 @@
         cursor: pointer;
     }
 
+    .client-select {
+        height: 38px !important;
+        padding: 6px 12px !important;
+    }
+
     @media (max-width: 768px) {
         .home-page-header {
             flex-direction: column;
@@ -310,7 +315,7 @@
     <!-- Header Section -->
     <div class="home-page-header">
         <a href="http://localhost:8000/" class="header-title" style="text-decoration: none; color: white;">
-            <i class="fas fa-pills"></i> Farmsavestores
+            <i class="fas fa-pills"></i> Status Vaccines
         </a>
         <form action="{% url 'search' %}" method="POST" class="search-form">
             {% csrf_token %}

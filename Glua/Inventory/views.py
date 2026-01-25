@@ -976,7 +976,7 @@ def picking_list_view(request):
     query = request.GET.get('search', '')
     if query:
         picking_list = picking_list.filter(
-            Q(client__icontains=query) |  
+            Q(client__name__icontains=query) |  
             Q(product__icontains=query) |
             Q(batch_no__icontains=query) |
             Q(quantity__icontains=query) |
@@ -1003,12 +1003,19 @@ def picking_list_view(request):
 def add_to_picking_list(request, drug_id):
     if request.method == "POST":
         drug = get_object_or_404(Drug, id=drug_id)
-        client = request.POST.get("client", "").strip()
+        client_id = request.POST.get("client", "").strip()
         quantity = request.POST.get("quantity", "0").strip()
 
         # Validate client field (ensure it's not empty)
-        if not client:
-            messages.error(request, "Client name cannot be empty.")
+        if not client_id:
+            messages.error(request, "Client cannot be empty.")
+            return redirect("home")
+        
+        # Get the Client object
+        try:
+            client = Client.objects.get(id=client_id)
+        except Client.DoesNotExist:
+            messages.error(request, "Invalid client selected.")
             return redirect("home")
 
         # Ensure quantity is a valid integer
@@ -1044,15 +1051,22 @@ def add_to_picking_list(request, drug_id):
 
 def cannister_list(request):
     cannisters = Cannister.objects.all()
-    return render(request, 'Inventory/cannister.html', {'cannisters': cannisters})
+    clients = Client.objects.all()
+    return render(request, 'Inventory/cannister.html', {'cannisters': cannisters, 'clients': clients})
 
 @login_required
 def issue_cannister(request, cannister_id):
     cannister = get_object_or_404(Cannister, id=cannister_id)
     
     if request.method == "POST":
-        client = request.POST.get("client")
+        client_id = request.POST.get("client")
         quantity = int(request.POST.get("quantity"))
+        
+        try:
+            client = Client.objects.get(id=client_id)
+        except Client.DoesNotExist:
+            messages.error(request, 'Invalid client selected')
+            return redirect('cannister_list')
 
         if quantity > 0 and quantity <= cannister.stock:
             # Deduct stock
@@ -1090,7 +1104,7 @@ def bin_search(request):
     issued_cannisters = IssuedCannister.objects.filter(
         Q(name__icontains=query) | 
         Q(batch_no__icontains=query) |
-        Q(client__icontains=query) |
+        Q(client__name__icontains=query) |
         Q(staff_on_duty__username__icontains=query)
     ).order_by('-date_issued')
 
@@ -1199,6 +1213,7 @@ def create_client(request):
         try:
             name = request.POST.get('name', '').strip()
             email = request.POST.get('email', '').strip()
+            country_code = request.POST.get('country_code', '+1').strip()
             phone = request.POST.get('phone', '').strip()
             
             if not name:
@@ -1210,11 +1225,15 @@ def create_client(request):
                 messages.warning(request, f'Client "{name}" already exists')
                 return redirect('client_list')
             
+            # Combine country code and phone number
+            full_phone = f"{country_code} {phone}".strip() if phone else None
+            
             # Create new client
             client = Client.objects.create(
                 name=name,
                 email=email if email else None,
-                phone=phone if phone else None
+                country_code=country_code,
+                phone=full_phone
             )
             messages.success(request, f'Client "{client.name}" has been successfully created')
             return redirect('client_list')
@@ -1222,7 +1241,10 @@ def create_client(request):
             messages.error(request, f'An error occurred: {str(e)}')
             return redirect('create_client')
     
-    context = {'title': 'Add New Client'}
+    context = {
+        'title': 'Add New Client',
+        'country_choices': Client.COUNTRY_CHOICES
+    }
     return render(request, 'Inventory/create_client.html', context)
 
 
@@ -1235,6 +1257,7 @@ def edit_client(request, pk):
         try:
             name = request.POST.get('name', '').strip()
             email = request.POST.get('email', '').strip()
+            country_code = request.POST.get('country_code', '+1').strip()
             phone = request.POST.get('phone', '').strip()
             
             if not name:
@@ -1246,10 +1269,14 @@ def edit_client(request, pk):
                 messages.warning(request, f'Another client with name "{name}" already exists')
                 return redirect('edit_client', pk=pk)
             
+            # Combine country code and phone number
+            full_phone = f"{country_code} {phone}".strip() if phone else None
+            
             # Update client
             client.name = name
             client.email = email if email else None
-            client.phone = phone if phone else None
+            client.country_code = country_code
+            client.phone = full_phone
             client.save()
             messages.success(request, f'Client "{client.name}" has been successfully updated')
             return redirect('client_list')
@@ -1259,6 +1286,7 @@ def edit_client(request, pk):
     
     context = {
         'client': client,
+        'country_choices': Client.COUNTRY_CHOICES,
         'title': 'Edit Client'
     }
     return render(request, 'Inventory/edit_client.html', context)

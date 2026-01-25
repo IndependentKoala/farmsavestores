@@ -10,8 +10,39 @@ from django.utils.timezone import now
 
 class Client(models.Model):
     """Model definition for Client."""
+    COUNTRY_CHOICES = (
+        ('+1', '🇺🇸 United States (+1)'),
+        ('+44', '🇬🇧 United Kingdom (+44)'),
+        ('+91', '🇮🇳 India (+91)'),
+        ('+86', '🇨🇳 China (+86)'),
+        ('+81', '🇯🇵 Japan (+81)'),
+        ('+33', '🇫🇷 France (+33)'),
+        ('+49', '🇩🇪 Germany (+49)'),
+        ('+39', '🇮🇹 Italy (+39)'),
+        ('+34', '🇪🇸 Spain (+34)'),
+        ('+31', '🇳🇱 Netherlands (+31)'),
+        ('+46', '🇸🇪 Sweden (+46)'),
+        ('+47', '🇳🇴 Norway (+47)'),
+        ('+45', '🇩🇰 Denmark (+45)'),
+        ('+358', '🇫🇮 Finland (+358)'),
+        ('+41', '🇨🇭 Switzerland (+41)'),
+        ('+43', '🇦🇹 Austria (+43)'),
+        ('+32', '🇧🇪 Belgium (+32)'),
+        ('+353', '🇮🇪 Ireland (+353)'),
+        ('+61', '🇦🇺 Australia (+61)'),
+        ('+64', '🇳🇿 New Zealand (+64)'),
+        ('+27', '🇿🇦 South Africa (+27)'),
+        ('+234', '🇳🇬 Nigeria (+234)'),
+        ('+254', '🇰🇪 Kenya (+254)'),
+        ('+256', '🇺🇬 Uganda (+256)'),
+        ('+255', '🇹🇿 Tanzania (+255)'),
+        ('+260', '🇿🇲 Zambia (+260)'),
+        ('+263', '🇿🇼 Zimbabwe (+263)'),
+    )
+    
     name = models.CharField(max_length=200, unique=True)
     email = models.EmailField(blank=True, null=True)
+    country_code = models.CharField(max_length=4, choices=COUNTRY_CHOICES, default='+1', blank=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
 
