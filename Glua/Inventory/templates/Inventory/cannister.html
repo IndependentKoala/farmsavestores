@@ -163,26 +163,9 @@
 </div>
 
 <script>
-    // Download Table Data as CSV
+    // Redirect to server endpoint to download styled Excel using template
     document.getElementById("download-btn").addEventListener("click", function () {
-        const table = document.getElementById("cannisters-table");
-        let csvContent = "";
-
-        // Loop through each row of the table
-        for (let row of table.rows) {
-            const cells = Array.from(row.cells);
-            const rowContent = cells.map(cell => `"${cell.textContent.trim()}"`).join(",");
-            csvContent += rowContent + "\r\n";
-        }
-
-        // Create a downloadable CSV link
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.setAttribute("href", URL.createObjectURL(blob));
-        link.setAttribute("download", "Cannisters_inventory.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        window.location.href = "{% url 'download_cannister_stock' %}";
     });
 </script>
 

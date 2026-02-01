@@ -44,6 +44,7 @@ urlpatterns = [
     path('picking-list/', views.picking_list_view, name='picking_list'),
     path("add_to_picking_list/<int:drug_id>/", views.add_to_picking_list, name="add_to_picking_list"),
     path('cannisters/', views.cannister_list, name='cannister_list'),
+    path('cannisters/download/', views.download_cannister_stock, name='download_cannister_stock'),
     path('cannisters/issue/<int:cannister_id>/', views.issue_cannister, name='issue_cannister'),
     path('bin-card/', views.bin_card, name='bin_card'),
     path('bin-card/download/', views.download_bin_card_excel, name='download_bin_card_excel'),

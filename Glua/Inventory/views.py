@@ -403,13 +403,15 @@ def download_bin_card_excel(request):
     """Export bin card as styled Excel file using template"""
     try:
         # Load template
-        template_path = os.path.join(settings.BASE_DIR, 'Inventory transfer record template11.xlsx')
+        template_path = os.path.join(settings.BASE_DIR, 'Cannister Bin Card.xlsx')
         wb = load_workbook(template_path)
-        ws = wb['Template']  # Work with Template sheet
+        # Prefer sheet named 'Template', fallback to active
+        if 'Template' in wb.sheetnames:
+            ws = wb['Template']
+        else:
+            ws = wb.active
         
-        # Delete rows 3 and 4 (template placeholder data)
-        ws.delete_rows(3, 2)
-        
+        # Don't delete rows - preserve template formatting in rows 1-3
         # Get all issued cannisters
         issued_cannisters = IssuedCannister.objects.all().order_by('-date_issued')
         
@@ -438,27 +440,79 @@ def download_bin_card_excel(request):
         else:
             issued_cannisters = issued_cannisters.order_by('-date_issued')
         
-        # Start writing data from row 3 (after headers)
-        row_num = 3
+        # Start writing data from row 4 (preserve headers in rows 1-3)
+        # Columns: Issue Date | Return Date | Cannister Name | Batch No | Issued By | Returned By | Client | Quantity | Balance
+        row_num = 4
         for cannister in issued_cannisters:
-            ws.cell(row=row_num, column=1, value=cannister.name if cannister.name else '')
-            ws.cell(row=row_num, column=2, value=cannister.batch_no if cannister.batch_no else '')
-            ws.cell(row=row_num, column=3, value=cannister.staff_on_duty.username if cannister.staff_on_duty else '')
-            ws.cell(row=row_num, column=4, value=cannister.client.name if cannister.client else '')
-            ws.cell(row=row_num, column=5, value=cannister.quantity)
-            ws.cell(row=row_num, column=6, value=cannister.balance)
-            ws.cell(row=row_num, column=7, value=cannister.date_issued.strftime('%Y-%m-%d') if cannister.date_issued else '')
-            ws.cell(row=row_num, column=8, value=cannister.date_returned.strftime('%Y-%m-%d') if cannister.date_returned else '')
+            ws.cell(row=row_num, column=1, value=cannister.date_issued.strftime('%Y-%m-%d') if cannister.date_issued else '')
+            ws.cell(row=row_num, column=2, value=cannister.date_returned.strftime('%Y-%m-%d') if cannister.date_returned else '')
+            ws.cell(row=row_num, column=3, value=cannister.name if cannister.name else '')
+            ws.cell(row=row_num, column=4, value=cannister.batch_no if cannister.batch_no else '')
+            ws.cell(row=row_num, column=5, value=cannister.staff_on_duty.username if cannister.staff_on_duty else '')
+            ws.cell(row=row_num, column=6, value=cannister.returned_by.username if cannister.returned_by else '')
+            ws.cell(row=row_num, column=7, value=cannister.client.name if cannister.client else '')
+            ws.cell(row=row_num, column=8, value=cannister.quantity)
+            ws.cell(row=row_num, column=9, value=cannister.balance)
             row_num += 1
         
         # Create response
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = 'attachment; filename="bin_card.xlsx"'
+        response['Content-Disposition'] = 'attachment; filename="Cannister Bin Card.xlsx"'
         wb.save(response)
         return response
         
+    except Exception as e:
+        return HttpResponse(f"Error generating Excel file: {str(e)}", status=500)
+
+
+@login_required
+def download_cannister_stock(request):
+    """Export cannister stock as styled Excel file using template"""
+    try:
+        # Load template
+        template_path = os.path.join(settings.BASE_DIR, 'Cannister Stock.xlsx')
+        wb = load_workbook(template_path)
+        # Use 'Template' sheet if present
+        if 'Template' in wb.sheetnames:
+            ws = wb['Template']
+        else:
+            ws = wb.active
+
+        # Remove placeholder rows if template has them
+        try:
+            ws.delete_rows(3, 2)
+        except Exception:
+            pass
+
+        # Get all cannisters
+        cannisters = Cannister.objects.all().order_by('name')
+
+        # Apply search filter if provided
+        search_query = request.GET.get('search') or request.GET.get('q') or request.POST.get('q')
+        if search_query:
+            cannisters = cannisters.filter(
+                Q(name__icontains=search_query) |
+                Q(batch_no__icontains=search_query)
+            )
+
+        # Start writing data from row 3 (after headers)
+        row_num = 3
+        for can in cannisters:
+            ws.cell(row=row_num, column=1, value=can.name if can.name else '')
+            ws.cell(row=row_num, column=2, value=can.batch_no if can.batch_no else '')
+            ws.cell(row=row_num, column=3, value=can.stock if can.stock is not None else 0)
+            ws.cell(row=row_num, column=4, value=can.litres if can.litres else '')
+            row_num += 1
+
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Cannister Stock.xlsx"'
+        wb.save(response)
+        return response
     except Exception as e:
         return HttpResponse(f"Error generating Excel file: {str(e)}", status=500)
 
