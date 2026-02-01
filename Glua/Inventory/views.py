@@ -1359,7 +1359,7 @@ def download_all_drugs(request):
             ws.cell(row=row_num, column=3, value=drug.stock if drug.stock is not None else 0)
             ws.cell(row=row_num, column=4, value=drug.expiry_date.strftime('%b %Y') if drug.expiry_date else '')
             ws.cell(row=row_num, column=5, value=int(drug.dose_pack) if drug.dose_pack else '')
-            ws.cell(row=row_num, column=6, value=int(drug.reorder_level) if drug.reorder_level else '')
+            # ws.cell(row=row_num, column=6, value=int(drug.reorder_level) if drug.reorder_level else '')
             row_num += 1
 
         # Create response
