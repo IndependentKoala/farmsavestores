@@ -342,7 +342,7 @@ def download_bin_report_excel(request):
     """Export bin report as styled Excel file using template"""
     try:
         # Load template
-        template_path = os.path.join(settings.BASE_DIR, 'Inventory transfer record template11.xlsx')
+        template_path = os.path.join(settings.BASE_DIR, 'bin_report.xlsx')
         wb = load_workbook(template_path)
         ws = wb['Template']  # Work with Template sheet
         
@@ -378,11 +378,12 @@ def download_bin_report_excel(request):
         # Start writing data from row 3 (after headers)
         row_num = 3
         for sale in sales:
-            ws.cell(row=row_num, column=1, value=sale.drug_sold if sale.drug_sold else '')
-            ws.cell(row=row_num, column=2, value=sale.batch_no if sale.batch_no else '')
-            ws.cell(row=row_num, column=3, value=sale.quantity)
-            ws.cell(row=row_num, column=4, value=sale.client.name if sale.client else '')
-            ws.cell(row=row_num, column=5, value=sale.date_sold.strftime('%Y-%m-%d') if sale.date_sold else '')
+            ws.cell(row=row_num, column=1, value=sale.date_sold.strftime('%Y-%m-%d') if sale.date_sold else '')
+            ws.cell(row=row_num, column=2, value=sale.client.name if sale.client else '')
+            ws.cell(row=row_num, column=3, value=sale.drug_sold if sale.drug_sold else '')
+            ws.cell(row=row_num, column=4, value=sale.batch_no if sale.batch_no else '')
+            ws.cell(row=row_num, column=5, value=sale.quantity)
+            ws.cell(row=row_num, column=6, value=sale.remaining_quantity if sale.remaining_quantity else 0)
             row_num += 1
         
         # Create response
@@ -1318,3 +1319,55 @@ def delete_client(request, pk):
         'title': 'Delete Client'
     }
     return render(request, 'Inventory/delete_client.html', context)
+
+
+@login_required
+def download_all_drugs(request):
+    """Export all drugs/vaccines as styled Excel file using template"""
+    try:
+        # Load template
+        template_path = os.path.join(settings.BASE_DIR, 'Stock_report.xlsx')
+        wb = load_workbook(template_path)
+        # Prefer sheet named 'Template', fallback to active
+        if 'Template' in wb.sheetnames:
+            ws = wb['Template']
+        else:
+            ws = wb.active
+
+        # Remove placeholder rows in the template (if present)
+        try:
+            ws.delete_rows(3, 2)
+        except Exception:
+            pass
+
+        # Get all drugs ordered by name
+        drugs = Drug.objects.all().order_by('name')
+
+        # Apply search filter if provided
+        search_query = request.GET.get('search') or request.GET.get('q') or request.POST.get('q')
+        if search_query:
+            drugs = drugs.filter(
+                Q(name__icontains=search_query) |
+                Q(batch_no__icontains=search_query)
+            )
+
+        # Start writing data from row 3 (after headers)
+        row_num = 3
+        for drug in drugs:
+            ws.cell(row=row_num, column=1, value=drug.name if drug.name else '')
+            ws.cell(row=row_num, column=2, value=drug.batch_no if drug.batch_no else '')
+            ws.cell(row=row_num, column=3, value=drug.stock if drug.stock is not None else 0)
+            ws.cell(row=row_num, column=4, value=drug.expiry_date.strftime('%b %Y') if drug.expiry_date else '')
+            ws.cell(row=row_num, column=5, value=int(drug.dose_pack) if drug.dose_pack else '')
+            ws.cell(row=row_num, column=6, value=int(drug.reorder_level) if drug.reorder_level else '')
+            row_num += 1
+
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Stock_report.xlsx"'
+        wb.save(response)
+        return response
+    except Exception as e:
+        return HttpResponse(f"Error generating Excel file: {str(e)}", status=500)

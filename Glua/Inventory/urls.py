@@ -52,6 +52,7 @@ urlpatterns = [
     path('bin-card/return/<int:issued_cannister_id>/', views.return_cannister, name='return_cannister'),
     path('search-cannister/', views.search_cannister, name='search_cannister'),
     path('download/top-sold/', views.download_top_sold, name='download_top_sold'),
+    path('download/all-drugs/', views.download_all_drugs, name='download_all_drugs'),
     # Client management paths
     path('clients/', views.client_list, name='client_list'),
     path('clients/create/', views.create_client, name='create_client'),
