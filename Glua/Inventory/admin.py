@@ -6,6 +6,7 @@ from .models import Drug, Sale, Stocked, Measurement, LockedProduct, MarketingIt
 class LockedProductAdmin(admin.ModelAdmin):
     # Optionally, add fields to the admin panel
     list_display = ('drug', 'locked_by', 'date_locked', 'quantity', 'client')
+    search_fields = ('drug__name', 'client__name', 'locked_by__username')
 
     def save_model(self, request, obj, form, change):
         # Check if the object is being updated (change == True)
@@ -19,12 +20,53 @@ class LockedProductAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-admin.site.register(Drug)  # If you want to use the default admin for Drug
-admin.site.register(Sale)  # If you want to use the default admin for Sale
-admin.site.register(Client)  # Register Client model
-admin.site.register(MarketingItem)  # If you want to use the default admin for marketItem
-admin.site.register(IssuedItem)  # If you want to use the default admin for IssuedItem
+class DrugAdmin(admin.ModelAdmin):
+    list_display = ('name', 'batch_no', 'stock', 'dose_pack', 'expiry_date', 'reorder_level')
+    search_fields = ('name', 'batch_no')
+
+
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'email', 'country_code', 'date_created')
+    search_fields = ('name', 'phone', 'email')
+
+
+class CannisterAdmin(admin.ModelAdmin):
+    list_display = ('name', 'batch_no', 'stock', 'litres')
+    search_fields = ('name', 'batch_no')
+
+
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ('drug_sold', 'client', 'date_sold', 'quantity', 'remaining_quantity')
+    search_fields = ('drug_sold', 'batch_no', 'client__name')
+
+
+class PickingListAdmin(admin.ModelAdmin):
+    list_display = ('date', 'client', 'product', 'batch_no', 'quantity')
+    search_fields = ('product', 'batch_no', 'client__name')
+
+
+class IssuedItemAdmin(admin.ModelAdmin):
+    list_display = ('item', 'issued_to', 'quantity_issued', 'date_issued', 'issued_by')
+    search_fields = ('item', 'issued_to', 'issued_by__username')
+
+
+class IssuedCannisterAdmin(admin.ModelAdmin):
+    list_display = ('name', 'batch_no', 'client', 'date_issued', 'date_returned', 'quantity')
+    search_fields = ('name', 'batch_no', 'client__name')
+
+
+class MarketingItemAdmin(admin.ModelAdmin):
+    list_display = ('name', 'stock')
+    search_fields = ('name',)
+
+
+# Register models with their ModelAdmin classes
+admin.site.register(Drug, DrugAdmin)
+admin.site.register(Sale, SaleAdmin)
+admin.site.register(Client, ClientAdmin)
+admin.site.register(MarketingItem, MarketingItemAdmin)
+admin.site.register(IssuedItem, IssuedItemAdmin)
 admin.site.register(LockedProduct, LockedProductAdmin)
-admin.site.register(PickingList)
-admin.site.register(Cannister)
-admin.site.register(IssuedCannister)
+admin.site.register(PickingList, PickingListAdmin)
+admin.site.register(Cannister, CannisterAdmin)
+admin.site.register(IssuedCannister, IssuedCannisterAdmin)
